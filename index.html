@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EVE Dashboard</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.min.js"></script>
+
+
+    <style>
+        body {
+            margin: 10px
+        }
+    </style>
+
+
+    <script>
+
+        angular.module('eve.dashboard', []);
+
+        angular.module('eve.dashboard').factory('socket', function ($rootScope) {
+
+         var socket = io();
+
+         return {
+            on: function (eventName, callback) {
+                socket.on(eventName, function () {
+                    var args = arguments;
+                    $rootScope.$apply(function () {
+                        callback.apply(socket, args);
+                    });
+                });
+            },
+            emit: function (eventName, data, callback) {
+                socket.emit(eventName, data, function () {
+                    var args = arguments;
+                    $rootScope.$apply(function () {
+                        if (callback) {
+                            callback.apply(socket, args);
+                        }
+                    });
+                })
+            }
+         };
+
+         });
+
+        angular.module('eve.dashboard').controller('IndexCtrl', function ($scope, socket) {
+        
+            //var socket = io();
+
+            $scope.system = {
+                id: null,
+                name: '',
+                signatures: [
+                    
+                ]
+            };
+
+            socket.emit('system:get', {}, function(system) {
+                $scope.system = system;
+            });
+
+            $scope.remove = function(signature) {
+
+                socket.emit('signature:remove', signature, function(data) {
+                    var index = $scope.system.signatures.indexOf(signature);
+                    $scope.system.signatures.splice(index, 1);
+                });
+
+            };
+
+            socket.on('signatures:change', function(data) {
+                $scope.system.signatures = data;
+            });
+
+            socket.on('system:change', function(data) {
+                console.log('system:change', data);
+                $scope.system = data;
+            });
+        });
+
+
+
+    </script>
+    
+
+</head>
+<body ng-app="eve.dashboard" ng-controller="IndexCtrl">
+
+<div ng-show="system.id" class="page-header">
+  <h1>{{system.name}} <small>{{system.id}}</small></h1>
+</div>
+
+<div ng-show="!system.id" class="alert alert-warning" role="alert">No solar system info!</div>
+
+
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>#</th>
+        <th>ID</th>
+        <th>NATURE</th>
+        <th>TYPE</th>
+        <th>TITLE</th>
+        <th>ACTION</th>
+    </tr>
+    </thead>
+    <tbody>
+
+    <tr ng-class="{success: signature.status == 1, warning: signature.status == 2, danger: signature.status == 3}" ng-repeat="signature in system.signatures">
+        <td>{{$index+1}}</td>
+        <td>{{signature.id}}</td>
+        <td>{{signature.nature}}</td>
+        <td>{{signature.type}}</td>
+        <td>{{signature.title}}</td>
+        <td>
+            <button ng-click="remove(signature)" class="btn btn-danger btn-xs">
+                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+            </button>
+        </td>
+    </tr>
+
+    </tbody>
+</table>
+
+</body>
+</html>
