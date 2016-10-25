@@ -1,5 +1,4 @@
 var solarSystem = require('./solar-system.js');
-var solarSystem = require('./solar-system.js');
 var _ = require('lodash');
 var siggy = require('./siggy.js');
 

@@ -17,6 +17,9 @@ var solarSystem = require('./solar-system.js');
 var signatures = require('./signatures.js');
 signatures.setSocket(socket);
 
+var local = require('./local.js');
+local.setSocket(socket);
+
 var watcher = require('./watcher.js');
 watcher.setSocket(socket);
 
@@ -48,6 +51,7 @@ il.add(function() {
     clipboard.monitor(function(newTextClipboard) {
         console.log('New clipboard.');
         signatures.update(newTextClipboard);
+        local.update(newTextClipboard)
     });
 }).run();
 
